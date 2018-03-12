@@ -1,0 +1,42 @@
+#include <iostream>
+using namespace std;
+
+int main() {
+	int i=0;
+	const int num = 5;
+	int test[num];
+	cout << num << "l‚Ì“_”‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢\n";
+	while(i < num){
+		cin >> test[i];
+		i++;
+	}
+	cout << "¬‚³‚¢‡‚É•À‚×‚Ü‚·\n";
+	i = 0;
+	int j, k;
+	while (i < num) {
+		k = i;
+		j = i+1;
+		while (j < num) {
+			if (test[k] > test[j]) {
+				k = j;
+			}
+			j++;
+		}
+		
+		if (i != k) {
+			int x;
+			x = test[i];
+			test[i] = test[k];
+			test[k] = x;
+		}
+		i++;
+	}
+	cout << "Œ‹‰Ê\n";
+	i = 0;
+	while(i < 5){
+		cout << test[i];
+		cout << '\n';
+		i++;
+	}
+	return 0;
+}

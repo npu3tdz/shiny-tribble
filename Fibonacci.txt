@@ -1,0 +1,37 @@
+int Fibonacci() {
+	unsigned int i = 0;
+	unsigned int k = 1;
+	int n = 0;
+	const int num = 40;
+	int fibo[num];
+	while (n < num) {
+		fibo[n] = i;
+		cout << fibo[n] << '\n';
+		n++;
+		fibo[n] = k;
+		cout << fibo[n] << '\n';
+		i += k;
+		k += i;
+		n++;
+	}
+	return 0;
+}
+int main() {
+	int n = 0;
+	unsigned int i = 0;
+	unsigned int k = 1;
+	const int num = 40;
+	int fibo[num];
+	while (n < num) {
+		fibo[n] = i;
+		n++;
+		fibo[n] = k;
+		n++;
+		i += k;
+		k += i;
+	}
+	int d;
+	cout << "1‚©‚ç40‚Ü‚Å‚Ì®”‚ð“ü—Í‚µ‚Ä‚­‚¾‚³‚¢\n";
+	cin >> d;
+	cout << d << "”Ô–Ú‚Ì”‚Í" << fibo[d - 1] << "‚Å‚·\n";
+}
