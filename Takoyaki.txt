@@ -1,0 +1,315 @@
+using UnityEngine;
+using System.Collections;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+//監督スクリプト
+public class Gamedirector : MonoBehaviour {
+    public AudioClip appleSE;
+    public AudioClip bombSE;
+    AudioSource aud;
+    GameObject timerText;
+    GameObject pointText;
+    //ゲーム時間
+    float time = 40.0f;
+    GameObject generator;
+    //得点を初期化
+    public static int point = 0;
+    public void GetPoint()
+    {
+        point += 5;
+    }
+public void GetPoint2()
+    {
+        point += 20;
+    }
+    public void Bomb()
+    {
+       point += (-50);
+    }
+	// Use this for initialization
+	void Start () {
+        this.timerText = GameObject.Find("Time");
+        this.pointText = GameObject.Find("Point");
+        this.generator = GameObject.Find("takoGenerator");
+        this.aud = GetComponent<AudioSource>();
+	}
+	
+	// Update is called once per frame
+	    void Update () {
+		this.time-=Time.deltaTime;
+        //小数第一位まで表示
+        this.timerText.GetComponent<Text>().text =
+            this.time.ToString("F1");
+        this.pointText.GetComponent<Text>().text=
+        point.ToString() + "point";
+        //秒区間ごとにレベルデザイン
+        if (30 <= this.time && this.time < 40)
+        {
+            this.generator.GetComponent<TakoGenerator>().SetParameter(0.5f, 1.5f, 2);
+        }else if (20 <= this.time && this.time < 30)
+        {
+            this.generator.GetComponent<TakoGenerator>().SetParameter(0.6f, 1.8f, 3);
+        }else if (10 <= this.time && this.time < 20)
+        {
+            this.generator.GetComponent<TakoGenerator>().SetParameter(0.7f, 2.0f, 4);
+        }else if (0 <= this.time && this.time < 10)
+        {
+            this.generator.GetComponent<TakoGenerator>().SetParameter(0.4f, 2.5f, 5);
+        }
+        //終了１０秒前から時間UIを赤字に
+        if(this.time<=10)
+        {
+            this.timerText.GetComponent<Text>().color =
+                new Color(1, 0, 0, 1);
+        }
+        if (this.time <= 0)
+        {
+            SceneManager.LoadScene("TimeUp");
+        }
+        if (Input.GetMouseButtonDown(0))
+        {
+            Vector3 aTappoint =
+                Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Collider2D aCollider2D =
+                Physics2D.OverlapPoint(aTappoint);
+            if (aCollider2D!=null)
+            {
+                GameObject obj =
+                    aCollider2D.transform.gameObject;
+                Debug.Log(obj.name);
+                //検知したオブジェクトネームごとに得点を分ける
+                if (obj.name == "enemyPrefab(Clone)")
+                {
+                    this.aud.PlayOneShot(this.appleSE);
+                    Destroy(obj);
+                    GetPoint();
+                }
+                else if (obj.name == "enemy2Prefab(Clone)")
+                {
+                    this.aud.PlayOneShot(this.appleSE);
+                    Destroy(obj);
+                    GetPoint2();
+                }
+                else if (obj.name == "bombPrefab(Clone)")
+                {
+                    this.aud.PlayOneShot(this.bombSE);
+                    Destroy(obj);
+                    Bomb();
+                }
+            }
+        }
+    }
+   
+}
+
+//オブジェクトにアタッチするスクリプト（オープンソースであるTokenを継承）
+public class TakoController : Token{
+
+    int i = 1;
+
+    // Use this for initialization
+    void Start () {
+        SetSize(SpriteWidth / 2, SpriteHeight / 2);
+       
+        //ランダムな方向に移動する.
+        //方向をランダムに決める.
+        float dir = Random.Range(0, 359);
+        //速さは２
+        float spd = 2.0f;
+        SetVelocity(dir, spd);
+
+	}
+
+//ジェネレータスクリプト
+public class TakoGenerator : Token {
+    public GameObject enemyPrefab;
+    public GameObject enemy2Prefab;
+    public GameObject bombPrefab;
+    float span = 0.5f;
+    float delta = 0;
+    int ratio = 2;
+    float spd = 2.0f;
+    //レベルデザイン用
+    public void SetParameter(float span,float spd,int ratio)
+    {
+        this.span = span;
+        this.spd = spd;
+        this.ratio = ratio;
+    }
+	// Use this for initialization
+	void Start () {
+       
+	}
+	
+	// Update is called once per frame
+	void Update () {
+        this.delta += Time.deltaTime;
+        if (this.delta > this.span)
+        {
+            this.delta = 0;
+            GameObject item;
+            //金たこ焼きが増えれば爆弾も増える
+            int dice = Random.Range(1, 11);
+            if (dice <= this.ratio)
+            {
+                item = Instantiate(enemy2Prefab) as GameObject;
+            }
+            else if (dice>this.ratio&&dice<=this.ratio+2)
+            {
+                item = Instantiate(bombPrefab) as GameObject;
+            }
+            else
+            {
+                item = Instantiate(enemyPrefab) as GameObject;
+            }
+            
+            Vector2 min = GetWorldMin();//左下.
+            Vector2 max = GetWorldMax();//右上.
+            float px = Random.Range(min.x+2.5f, max.x-2.5f);
+            float py = Random.Range(min.y+2.5f, max.y-2.5f);
+            item.transform.position = new Vector3(px,py, 0);
+        }
+    }
+}
+
+//スコアの表示・入れ替え
+public class BestScore : Gamedirector
+{
+    GameObject bestscore;
+    GameObject bestscoretext;
+    public static int best = 0;
+
+    // Use this for initialization
+    void Start()
+    {
+        this.bestscore = GameObject.Find("Gamedirector");
+        this.bestscoretext = GameObject.Find("BestScore");
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (point > best)
+        {
+            best = point;
+        }
+        this.bestscoretext.GetComponent<Text>().text =
+            "Best Score "+best.ToString();
+        point = 0;
+    }
+}
+public class Cleardirector : MonoBehaviour {
+    private float time = 3.0f;
+	// Use this for initialization
+	void Start () {
+		
+	}
+	
+	// Update is called once per frame
+	void Update () {
+        this.time -= Time.deltaTime;
+        if (this.time <= 0)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                SceneManager.LoadScene("Prepare Scene2");
+            }
+        }
+	}
+}
+
+//本カウントまでのインターバル
+public class Prepare1 : MonoBehaviour {
+    float time = 3.0f;
+	// Update is called once per frame
+	 void Update () {
+        //カウントまで３秒待つ
+        this.time -= Time.deltaTime;
+        if (this.time <=0 )
+        {
+            SceneManager.LoadScene("Prepare Scene");
+        }
+	}
+}
+
+//本カウント
+public class Prepare2 : MonoBehaviour {
+    float time= 5.0f;
+    float tame = 1.0f;
+    GameObject timerText;
+	// Use this for initialization
+	void Start () {
+        this.timerText = GameObject.Find("Time");
+	}
+	
+	// Update is called once per frame
+	void Update () {
+        this.time -= Time.deltaTime;
+        this.timerText.GetComponent<Text>().text =
+            this.time.ToString("F0");
+        if (this.time <= 0.6)
+        {
+            this.tame -= Time.deltaTime;
+            this.timerText.GetComponent<Text>().text =
+                this.tame.ToString("Start!");
+        }
+        if (this.tame <= 0)
+        {
+            SceneManager.LoadScene("takoyaki touch");
+        }
+        }
+    }
+
+//スコア表示前のインターバル
+public class Return : MonoBehaviour {
+    private float time = 3.0f;
+	// Use this for initialization
+	void Start () {
+		
+	}
+	
+	// Update is called once per frame
+	void Update () {
+        //３秒待つ
+        this.time -= Time.deltaTime;
+        if (this.time <= 0)
+        {
+            if (Input.GetMouseButtonDown(0))
+        {
+                SceneManager.LoadScene("Score Scene");
+            }
+        }
+	}
+
+//スコア表示
+public class Score : Gamedirector
+{
+    GameObject scoretext;
+    GameObject score;
+   private float time = 5.0f;
+    // Use this for initialization
+    void Start()
+    {
+        this.score = GameObject.Find("Gamedirector");
+        this.scoretext = GameObject.Find("Score");
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        this.scoretext.GetComponent<Text>().text =
+        point.ToString() + " point " + '!';
+        //5秒待つ
+        this.time -= Time.deltaTime;
+        if (this.time <= 0)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                SceneManager.LoadScene("Title scene");
+
+            }
+        }
+    }
+}
+}
